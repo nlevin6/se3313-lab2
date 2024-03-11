@@ -11,21 +11,36 @@ struct MyShared {
     double elapsedTime;
 };
 
-class ReaderThread : public Thread {
-public:
-    virtual long ThreadMain(void) override {
-        Shared<MyShared> sharedMemory("sharedMemory");
+class ReaderThread {
+private:
+    std::thread theThread;
+    bool stopFlag;
 
+public:
+    ReaderThread() : stopFlag(false) {}
+
+    void ThreadMain(Shared<MyShared> sharedMemory) {
         cout << "I am a Reader" << endl;
 
-        while (true) {
+        while (!stopFlag) {
             cout << "Thread ID: " << sharedMemory->threadId << ", Report ID: " << sharedMemory->reportId
                  << ", Elapsed Time: " << sharedMemory->elapsedTime << " seconds." << endl;
 
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
+    }
 
-        return 0;
+    void Start() {
+        Shared<MyShared> sharedMemory("sharedMemory");
+        theThread = std::thread(&ReaderThread::ThreadMain, this, sharedMemory);
+    }
+
+    void Stop() {
+        stopFlag = true;
+    }
+
+    void Join() {
+        theThread.join();
     }
 };
 
