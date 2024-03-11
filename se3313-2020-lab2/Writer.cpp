@@ -1,79 +1,77 @@
 #include <iostream>
+#include <string>
 #include <vector>
 #include <thread>
+#include <stack>
 #include <chrono>
 #include "SharedObject.h"
+#include "thread.h"
 
 using namespace std;
 
-struct MyShared {
-    int threadId;
-    int reportId;
-    double timeSinceLastReport;
+struct SharedData {
+    int elapsedTime;
+    int threadNumber;
+    int reportNumber;
 };
 
-class WriterThread {
+class WriterThread : public Thread {
 public:
-    int threadNum;
+    int thread;
+    int report;
+    int delay;
     bool flag;
-    std::thread theThread;
 
-    WriterThread(int in) : threadNum(in), flag(false) {}
+    WriterThread(int thread, int delay, int report)
+        : Thread(delay * 1000), thread(thread), report(report), delay(delay) {}
 
-    void ThreadMain(Shared<MyShared> sharedMemory) {
-        int reportCount = 0;
-        while (true) {
-            sharedMemory->threadId = threadNum;
-            sharedMemory->reportId = reportCount++;
-            sharedMemory->timeSinceLastReport = 0.0;
+    virtual long ThreadMain(void) override {
+        Shared<SharedData> sharedMemory("sharedMemory");
+        while (!flag) {
+            this->report++;
+            auto start = chrono::steady_clock::now();
+            std::this_thread::sleep_for(chrono::seconds(delay));
+            auto finish = chrono::steady_clock::now();
 
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            if (flag) { // Exit loop to end the thread
-                break;
-            }
+            int totalTime = chrono::duration_cast<chrono::seconds>(finish - start).count();
+            sharedMemory->threadNumber = thread;
+            sharedMemory->elapsedTime = totalTime;
+            sharedMemory->reportNumber = report;
         }
-    }
-
-    void StartThread(Shared<MyShared> sharedMemory) {
-        theThread = std::thread(&WriterThread::ThreadMain, this, sharedMemory);
-    }
-
-    void JoinThread() {
-        theThread.join();
+        return 0;
     }
 };
 
 int main(void) {
-    std::cout << "I am a Writer" << std::endl;
-    vector<WriterThread*> threads;
-    Shared<MyShared> sharedMemory("sharedMemory");
+    int id = 0;
+    string choice;
+    string delay;
 
-    bool createNewThread = true;
-    while (createNewThread) {
-        int sleepTime;
-        cout << "Do you want to create a new thread? (yes/no): ";
-        string userInput;
-        cin >> userInput;
+    WriterThread* thread1;
 
-        if (userInput == "yes") {
-            cout << "Enter the sleep time for the thread (in seconds): ";
-            cin >> sleepTime;
+    Shared<SharedData> Shared("sharedMemory", true);
+    cout << "I am a Writer" << endl;
 
-            WriterThread* newThread = new WriterThread(threads.size() + 1);
-            newThread->StartThread(sharedMemory);
-            threads.push_back(newThread);
+    stack<WriterThread*> mystack;
 
-            cout << "Thread " << threads.size() << " created with sleep time " << sleepTime << " seconds." << endl;
+    while (true) {
+        cout << "Would you like to create a writer thread? (y or n): ";
+        getline(cin, choice);
+        if (choice == "n") {
+            break;
         } else {
-            createNewThread = false;
+            cout << "What would you like the delay time to be?: ";
+            getline(cin, delay);
+            id++;
+            thread1 = new WriterThread(id, stoi(delay), 0);
+            mystack.push(thread1);
         }
     }
-
-    for (WriterThread* thread : threads) {
-        thread->flag = true;
-        thread->JoinThread();
-        delete thread;
+    while (!mystack.empty()) {
+        thread1 = mystack.top();
+        thread1->flag = true;
+        delete thread1;
+        mystack.pop();
     }
-
     return 0;
 }
