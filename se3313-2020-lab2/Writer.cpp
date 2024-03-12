@@ -32,6 +32,7 @@ public:
     virtual long ThreadMain(void) override {
         Shared<SharedData> sharedMemory("sharedMemory");
         while (!flag) {
+            locks.Wait();
             this->report++;
             auto start = chrono::steady_clock::now();
             std::this_thread::sleep_for(chrono::seconds(delay));
@@ -41,6 +42,7 @@ public:
             sharedMemory->threadNumber = thread;
             sharedMemory->elapsedTime = totalTime;
             sharedMemory->reportNumber = report;
+            n.Signal();
         }
         return 0;
     }

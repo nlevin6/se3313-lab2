@@ -11,20 +11,23 @@ struct SharedData {
     int reportNumber;
 };
 
+Semaphore locks("r", 1, false);
+Semaphore n("n", 1, false);
+
 int main(void) {
     int sleepTimeSec = 2;
     cout << "I am a reader" << endl;
-    Semaphore locks("r",1,false);
-    Semaphore n("n",1,false);
-
     Shared<SharedData> sharedMemory("sharedMemory");
+    
     while (true) {
+        n.Wait();
         cout << "| Thread: " << sharedMemory->threadNumber
              << " | Report: " << sharedMemory->reportNumber
              << " | Time Passed: " << sharedMemory->elapsedTime 
              << " |"
              << endl;
-        usleep(sleepTimeSec * 1000000);//a 2 sec nap
+        locks.Signal();
+        usleep(sleepTimeSec * 1000000); // a 2 sec nap
     }
     return 0;
 }
