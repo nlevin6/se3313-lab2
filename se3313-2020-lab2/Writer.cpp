@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <thread>
-#include <stack>
+#include <stack> 
 #include <chrono>
 #include "SharedObject.h"
 #include "thread.h"
@@ -52,7 +52,7 @@ int main(void) {
     Shared<SharedData> Shared("sharedMemory", true);
     cout << "I am a Writer" << endl;
 
-    stack<WriterThread*> mystack;
+    stack<WriterThread*> mystack; 
 
     while (true) {
         cout << "Would you like to create a writer thread? (y or n): ";
