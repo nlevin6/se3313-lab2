@@ -1,9 +1,7 @@
 #include <iostream>
 #include "SharedObject.h"
-#include <mutex>
-#include <chrono>
-#include <condition_variable>
-#include <thread>
+#include <unistd.h>
+#include "Semaphore.h"
 
 using namespace std;
 
@@ -11,24 +9,22 @@ struct SharedData {
     int elapsedTime;
     int threadNumber;
     int reportNumber;
-    mutex semaphore;
-    condition_variable cv;
 };
 
 int main(void) {
     int sleepTimeSec = 2;
     cout << "I am a reader" << endl;
+    Semaphore locks("r",1,false);
+    Semaphore n("n",1,false);
+
     Shared<SharedData> sharedMemory("sharedMemory");
     while (true) {
-        {
-            unique_lock<mutex> lock(sharedMemory->semaphore);
-            cout << "| Thread: " << sharedMemory->threadNumber
-                 << " | Report: " << sharedMemory->reportNumber
-                 << " | Time Passed: " << sharedMemory->elapsedTime
-                 << " |"
-                 << endl;
-        }
-        this_thread::sleep_for(chrono::seconds(sleepTimeSec));
+        cout << "| Thread: " << sharedMemory->threadNumber
+             << " | Report: " << sharedMemory->reportNumber
+             << " | Time Passed: " << sharedMemory->elapsedTime 
+             << " |"
+             << endl;
+        usleep(sleepTimeSec * 1000000);//a 2 sec nap
     }
     return 0;
 }

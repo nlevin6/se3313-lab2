@@ -2,10 +2,11 @@
 #include <string>
 #include <vector>
 #include <thread>
-#include <stack> 
+#include <stack>
 #include <chrono>
 #include "SharedObject.h"
 #include "thread.h"
+#include "Semaphore.h"
 
 using namespace std;
 
@@ -14,6 +15,9 @@ struct SharedData {
     int threadNumber;
     int reportNumber;
 };
+
+Semaphore locks("r",1,true);
+Semaphore n("n",1,true);
 
 class WriterThread : public Thread {
 public:
@@ -52,7 +56,7 @@ int main(void) {
     Shared<SharedData> Shared("sharedMemory", true);
     cout << "I am a Writer" << endl;
 
-    stack<WriterThread*> mystack; 
+    stack<WriterThread*> mystack;  // Ensure the <stack> header is included
 
     while (true) {
         cout << "Would you like to create a writer thread? (y or n): ";
